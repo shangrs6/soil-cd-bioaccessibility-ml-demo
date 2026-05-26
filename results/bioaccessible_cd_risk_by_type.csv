@@ -1,0 +1,13 @@
+﻿Type,Predicted_Risk_Group,count,proportion
+Agricultural soils,Low,10,0.23255813953488372
+Agricultural soils,Medium,19,0.4418604651162791
+Agricultural soils,High,14,0.32558139534883723
+Industrial soils,Low,18,0.43902439024390244
+Industrial soils,Medium,7,0.17073170731707318
+Industrial soils,High,16,0.3902439024390244
+Mining/smelting soils,Low,29,0.3670886075949367
+Mining/smelting soils,Medium,32,0.4050632911392405
+Mining/smelting soils,High,18,0.22784810126582278
+Urban soils,Low,7,0.25925925925925924
+Urban soils,Medium,5,0.18518518518518517
+Urban soils,High,15,0.5555555555555556
