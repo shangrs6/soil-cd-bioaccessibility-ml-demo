@@ -8,10 +8,19 @@ Interpretable Machine Learning for Predicting Soil Cadmium Bioaccessibility from
 
 Total Cd concentration alone may not adequately represent exposure-related risk. This demo explores whether machine learning models can predict gastric-phase Cd bioaccessibility and support bioaccessibility-informed risk interpretation.
 
-## Data
+## Data Source
 
-- Main dataset: Processed_Data for BA_GP modeling
-- Supporting dataset: Cd_source for total Cd contamination background
+The dataset used in this demo was obtained from the public Zenodo record:
+
+**Compiled dataset on soil cadmium bioaccessibility, related properties, and concentration across China**  
+Authors: Jianghao Cao and Youya Zhou  
+DOI: 10.5281/zenodo.18171038  
+Source: https://zenodo.org/records/18171038  
+License: CC BY 4.0
+
+The original dataset is provided as `Data-Cd.xlsx` and includes soil Cd bioaccessibility data, soil physicochemical properties, soil Cd concentration data, and corresponding literature sources across China. In this demo, `Processed_Data` was used for BA_GP prediction, while `Cd_Source` was used for supporting EDA and background analysis.
+
+The raw Excel file is not included in this repository. Processed datasets and analysis outputs are provided for demonstration and reproducibility.
 
 ## Methods
 

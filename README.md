@@ -30,15 +30,25 @@ This hypothesis is explored by calculating gastric-phase bioaccessible Cd as `T_
 
 ## Dataset
 
-This project uses two processed datasets:
+This project uses a publicly available dataset from Zenodo:
 
-1. **Processed_Data**
-   - Main modeling dataset for BA_GP prediction.
-   - Variables include pH, SOM, soil texture, Fe, total Cd, digestion method, soil source type, and BA_GP.
+**Dataset:** Compiled dataset on soil cadmium bioaccessibility, related properties, and concentration across China  
+**Authors:** Jianghao Cao and Youya Zhou  
+**DOI:** 10.5281/zenodo.18171038  
+**Source:** https://zenodo.org/records/18171038  
+**License:** Creative Commons Attribution 4.0 International (CC BY 4.0)
 
-2. **Cd_source**
-   - Supporting dataset for describing total Cd contamination patterns across soil source types.
-   - It is not used for BA_GP prediction because it lacks bioaccessibility and soil physicochemical variables.
+The original dataset is provided as an Excel file named `Data-Cd.xlsx`. According to the Zenodo record, it contains multiple worksheets, including:
+
+- `Original_Data`: original literature-extracted soil Cd bioaccessibility data;
+- `Processed_Data`: cleaned and imputed data for modeling;
+- `Soil_Properties`: descriptive statistics and spatial distribution characteristics of soil properties across major geographical regions of China;
+- `Cd_Content_Data`: provincial soil Cd concentration data and statistical summaries;
+- `Cd_Source`: references and sources corresponding to provincial Cd concentration data.
+
+In this demo, `Processed_Data` is used as the main dataset for gastric-phase Cd bioaccessibility (`BA_GP`) prediction, while `Cd_Source` is used as a supporting dataset for describing total Cd contamination patterns across different soil source types.
+
+The raw Excel file is not included in this repository. Users can download it from the Zenodo record above if they want to reproduce the full preprocessing workflow. Processed datasets used in this demo are provided in `data/processed_data/`.
 
 ## Workflow
 
@@ -49,6 +59,7 @@ This project uses two processed datasets:
 5. Method and Type group-difference analysis
 6. Permutation importance and partial dependence plots
 7. Bioaccessibility-informed risk extension
+
 ## Code Description
 
 This repository contains both Python scripts and Jupyter notebooks. The scripts are used for reproducible data preprocessing and exploratory analysis, while the notebooks are used for model development, interpretation, and risk-extension analysis.
