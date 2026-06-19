@@ -44,8 +44,8 @@ Systematic evaluation of five feature group configurations across four models (R
 | Full-feature | + soil source type |
 
 ### Hyperparameter Tuning
-- Random Forest tuned via RandomizedSearchCV (20 iterations, `scripts/04`)
-- XGBoost tuned via RandomizedSearchCV (30 iterations, `scripts/06`)
+- Random Forest tuned via RandomizedSearchCV (20 iterations, `scripts/04`); best CV MAE from search = 15.84 (`rf_tuning_summary.json`)
+- XGBoost tuned via RandomizedSearchCV (30 iterations, `scripts/06`); best CV MAE from search = 15.87 (`xgb_tuning_summary.json`)
 - Tuned models evaluated under the same RepeatedKFold(5, 10) protocol (`scripts/05`, `scripts/07`)
 
 ### Final Model Interpretation (`scripts/08`)
@@ -103,17 +103,69 @@ The tuned Random Forest is the best-performing model overall.
 
 ### H2: Method and Type significantly affect BA_GP variability
 
-Kruskal-Wallis tests confirmed significant differences in BA_GP across both `Method` and `Type` groups. Including these variables progressively improved model performance (see ablation table above).
+Kruskal-Wallis tests confirmed significant differences in BA_GP across both `Method` and `Type` groups (`h2_method_type_kruskal_results.csv`):
 
-### Feature importance (Tuned RF, permutation importance on hold-out set)
+| Factor | H statistic | p value |
+|---|---|---|
+| Method | 20.84 | 0.00034 |
+| Type | 10.34 | 0.0159 |
 
-Top predictors: **Fe > SOM > log_T_Cd > Clay > Method > Sand > Type > Silt > pH**  
-Fe and SOM together account for the largest share of permutation importance.  
-pH showed near-zero importance in the tuned RF, suggesting its effect may be mediated through correlated soil properties.
+BA_GP descriptive statistics by in vitro digestion method (`ba_gp_summary_by_method.csv`, n = 190):
+
+| Method | n | Mean BA_GP (%) | Median | Std |
+|---|---|---|---|---|
+| SBET | 2 | 85.2 | 85.2 | 9.6 |
+| IVG | 15 | 64.8 | 69.5 | 25.2 |
+| UBM | 35 | 61.9 | 70.6 | 25.5 |
+| SBRC | 23 | 63.1 | 62.5 | 29.3 |
+| PBET | 115 | 45.1 | 43.8 | 26.3 |
+
+BA_GP descriptive statistics by soil source type (`ba_gp_summary_by_type.csv`):
+
+| Type | n | Mean BA_GP (%) | Median | Std |
+|---|---|---|---|---|
+| Urban soils | 27 | 66.4 | 76.7 | 22.7 |
+| Mining/smelting soils | 79 | 52.9 | 54.6 | 25.4 |
+| Agricultural soils | 43 | 48.1 | 38.4 | 30.7 |
+| Industrial soils | 41 | 46.7 | 42.8 | 29.3 |
+
+Including these variables progressively improved model performance (see ablation table above).
+
+### Feature importance
+
+Two sets of permutation importance results are available, derived from different model versions and evaluation protocols:
+
+**1. `feature_importance_ba_gp.csv`** — notebook path (notebooks/09), default-parameter RF, single KFold(5):
+
+| Rank | Feature | Importance (mean ± std) |
+|---|---|---|
+| 1 | Fe | 2.656 ± 0.922 |
+| 2 | SOM | 1.377 ± 0.586 |
+| 3 | log_T_Cd | 0.985 ± 1.459 |
+| 4 | Method | 0.576 ± 0.311 |
+| 5 | Type | 0.349 ± 0.189 |
+| 6 | Clay | 0.264 ± 0.212 |
+| 7 | Sand | 0.200 ± 0.836 |
+| 8 | Silt | 0.136 ± 0.393 |
+| 9 | pH | −0.318 ± 0.289 |
+
+**2. `final_tuned_rf_permutation_importance.csv`** — scripts/08, tuned RF, single 80/20 hold-out split:  
+Top predictors: **Fe > SOM > log_T_Cd > Clay > Method > Sand > Type > Silt > pH**
+
+Both sources agree on the ranking order. Fe and SOM consistently dominate. pH shows negative importance in both, suggesting it provides no independent signal once other soil properties are included. The high standard deviation of `log_T_Cd` (1.459) in the notebook-path result reflects variance across a single KFold(5) split, not repeated CV.
 
 ### Risk extension
 
-Bioaccessible Cd (gastric phase) varies substantially across soil source types, highlighting that total Cd concentration alone can misrepresent actual exposure-related risk.
+Bioaccessible Cd (gastric phase) varies substantially across soil source types, highlighting that total Cd concentration alone can misrepresent actual exposure-related risk. Predicted risk group distribution by soil source type (`bioaccessible_cd_risk_by_type.csv`):
+
+| Type | Low (%) | Medium (%) | High (%) |
+|---|---|---|---|
+| Urban soils | 25.9 | 18.5 | **55.6** |
+| Agricultural soils | 23.3 | 44.2 | 32.6 |
+| Industrial soils | 43.9 | 17.1 | 39.0 |
+| Mining/smelting soils | 36.7 | 40.5 | 22.8 |
+
+Urban soils show the highest proportion of High-risk samples (55.6%), while Mining/smelting soils — despite highest sample count — have a lower High-risk proportion (22.8%), suggesting that total Cd contamination level and bioaccessibility-based risk do not always align.
 
 ## Limitations
 
@@ -123,7 +175,7 @@ Bioaccessible Cd (gastric phase) varies substantially across soil source types, 
 - Risk groups are relative and for demonstration only; they do not correspond to regulatory thresholds.
 - Permutation importance was computed on a single 80/20 split, not under repeated CV; rankings are indicative.
 - R² ≈ 0.46 for the best model indicates moderate predictive power; substantial unexplained variance remains, likely reflecting measurement heterogeneity.
-- `notebooks/09` uses single KFold(5) rather than RepeatedKFold; its saved result files are not directly comparable to the script-path results in `unified_performance_comparison.csv`.
+- `notebooks/09` uses single KFold(5) rather than RepeatedKFold; its saved result files (`model_performance_ba_gp.csv`, `model_comparison_baseline_vs_full.csv`) are not directly comparable to the script-path results in `unified_performance_comparison.csv`. Specifically, the notebook-path full-feature RF (MAE = 16.38, R² = 0.438, single KFold) vs the script-path result (MAE = 16.15 ± 2.23, R² = 0.432 ± 0.124, 10-repeat) appear close in mean but differ in variance estimates.
 
 ## Future Work
 
