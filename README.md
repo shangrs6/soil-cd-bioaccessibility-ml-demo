@@ -54,14 +54,26 @@ The raw Excel file is not included in this repository. Users can download it fro
 
 ## Workflow
 
-1. Data cleaning and feature engineering
-2. Exploratory data analysis
-3. Feature group ablation study (five feature group configurations × four models)
-4. Random Forest hyperparameter tuning via RandomizedSearchCV
-5. XGBoost hyperparameter tuning via RandomizedSearchCV
-6. Evaluation of tuned Random Forest and XGBoost models
-7. Final model interpretation: permutation importance and partial dependence plots
-8. Bioaccessibility-informed risk extension
+This project contains two independent execution paths that share the same processed datasets but do not exchange outputs with each other.
+
+**Script pipeline (scripts/04 → 05 → 06 → 07 → 08, strictly sequential within each model branch):**
+
+1. Data cleaning and feature engineering (`scripts/01`, requires raw Excel)
+2. Exploratory data analysis (`scripts/02`, independent)
+3. Random Forest tuning (`scripts/04`) → produces `best_rf_params.json`
+4. Evaluate tuned Random Forest (`scripts/05`) → reads `best_rf_params.json`
+5. XGBoost tuning (`scripts/06`) → produces `best_xgb_params.json`
+6. Evaluate tuned XGBoost (`scripts/07`) → reads `best_xgb_params.json`
+7. Final model interpretation (`scripts/08`) → reads `best_rf_params.json`
+
+**Optional standalone experiment (no dependencies, can run at any time):**
+
+- Feature group ablation study (`scripts/03`) — reads only processed data and `config.yaml`; its output is not used by any other script
+
+**Notebook path (independent of the script pipeline):**
+
+- Model development and comparison (`notebooks/09`) — reads processed data directly; does not depend on any script output
+- Risk extension (`notebooks/10`) — reads processed data directly; requires `notebooks/09` to be run first within the same notebook session
 
 ## Configuration
 
@@ -86,8 +98,9 @@ This repository contains both Python scripts and Jupyter notebooks. The scripts 
 - `scripts/02_eda.py`  
   Performs exploratory data analysis for the processed bioaccessibility dataset and the Cd_source dataset. It generates distribution plots, Method/Type group comparisons, Cd source-type boxplots, correlation matrices, and scatter plots. Output figures are saved to `figures/`.
 
-- `scripts/03_feature_group_ablation.py`  
-  Runs a systematic feature group ablation study across five feature group configurations (Total-Cd-only, Soil-properties-only, Cd + Soil, Cd + Soil + Method, Full-feature) and four models (Ridge Regression, Random Forest, Gradient Boosting, XGBoost). Uses 5-fold cross-validation with 10 repeats. Feature groups and CV settings are read from `config.yaml`. Results are saved to `results/feature_group_ablation_results.csv`.
+- `scripts/03_feature_group_ablation.py` *(standalone exploratory experiment)*  
+  Runs a systematic feature group ablation study across five feature group configurations (Total-Cd-only, Soil-properties-only, Cd + Soil, Cd + Soil + Method, Full-feature) and four models (Ridge Regression, Random Forest, Gradient Boosting, XGBoost). Uses 5-fold cross-validation with 10 repeats. Feature groups and CV settings are read from `config.yaml`. Results are saved to `results/feature_group_ablation_results.csv`.  
+  **This script is independent of the tuning pipeline (scripts/04–08) and does not produce outputs consumed by any other script. It can be run in isolation at any point after processed data is available.**
 
 - `scripts/04_rf_tuning.py`  
   Tunes Random Forest hyperparameters using `RandomizedSearchCV` with 20 iterations and 5-fold cross-validation repeated 5 times. Searches over `n_estimators`, `max_depth`, `min_samples_leaf`, and `max_features`. Saves tuning results to `results/rf_tuning_results.csv`, best parameters to `results/best_rf_params.json`, and a summary (including best MAE) to `results/rf_tuning_summary.json`.
@@ -106,8 +119,8 @@ This repository contains both Python scripts and Jupyter notebooks. The scripts 
 
 ### Notebooks
 
-- `notebooks/09_model_ba_gp.ipynb`  
-  Builds and evaluates machine learning models for predicting gastric-phase Cd bioaccessibility (`BA_GP`).  
+- `notebooks/09_model_ba_gp.ipynb` *(independent of script pipeline)*  
+  Builds and evaluates machine learning models for predicting gastric-phase Cd bioaccessibility (`BA_GP`). Reads processed data directly from `data/processed_data/`; does not depend on any output from scripts/03–08.  
   This notebook includes:
   - total-Cd-only baseline models;
   - full-feature model comparison (Ridge Regression, Random Forest, Gradient Boosting, XGBoost);
@@ -118,8 +131,8 @@ This repository contains both Python scripts and Jupyter notebooks. The scripts 
   - partial dependence plots;
   - 80/20 train-test split for observed vs predicted visualization.
 
-- `notebooks/10_risk_extension.ipynb`  
-  Extends the BA_GP prediction results toward bioaccessibility-informed Cd risk interpretation.  
+- `notebooks/10_risk_extension.ipynb` *(depends only on notebooks/09 within the same session)*  
+  Extends the BA_GP prediction results toward bioaccessibility-informed Cd risk interpretation. Reads processed data directly from `data/processed_data/`; does not depend on any output from scripts/03–08. Requires `notebooks/09_model_ba_gp.ipynb` to have been run first in the same notebook session (uses the fitted model object in memory).  
   This notebook calculates gastric-phase bioaccessible Cd using:
 
   `Bioaccessible Cd_GP = T_Cd × BA_GP / 100`
@@ -179,7 +192,7 @@ This repository contains both Python scripts and Jupyter notebooks. The scripts 
 ## How to Run
 
 This project can be reproduced from the processed datasets provided in `data/processed_data/`.  
-The raw Excel file is not included in this repository due to data ownership and citation considerations, so users can start directly from the processed data and model notebooks.
+The raw Excel file is not included in this repository due to data ownership and citation considerations, so users can start directly from the processed data.
 
 ### 1. Clone the repository
 
@@ -210,70 +223,91 @@ pyyaml
 jupyter
 ```
 
-### 3. Recommended running order
+---
 
-The full workflow runs in the following order:
+### Path A: Script pipeline (scripts/04 → 05 → 06 → 07 → 08)
 
-```text
-scripts/01_data_processed.py       # data cleaning (requires raw Excel)
-scripts/02_eda.py                  # exploratory data analysis
-scripts/03_feature_group_ablation.py   # feature group ablation study
-scripts/04_rf_tuning.py            # Random Forest hyperparameter tuning
-scripts/05_evaluate_tuned_rf.py    # evaluate tuned Random Forest
-scripts/06_xgb_tuning.py           # XGBoost hyperparameter tuning
-scripts/07_evaluate_tuned_xgb.py   # evaluate tuned XGBoost
-scripts/08_final_model_interpretation.py  # permutation importance and PDP
-notebooks/09_model_ba_gp.ipynb     # modeling and comparison notebook
-notebooks/10_risk_extension.ipynb  # risk extension notebook
-```
+This path runs the tuning and interpretation pipeline. Steps within each model branch are strictly sequential due to file dependencies. `scripts/03` is an independent experiment described in Path B.
 
-Because the raw Excel file is not included in this public repository, `scripts/01_data_processed.py` is provided mainly to document the original data-cleaning workflow. Users who clone this repository can start directly from the processed datasets:
-
-```text
-data/processed_data/processed_bioaccessibility.csv
-data/processed_data/cd_source_cleaned.csv
-data/processed_data/cd_source_analysis.csv
-```
-
-Therefore, the recommended reproducible starting point is `scripts/03_feature_group_ablation.py` (or `notebooks/09_model_ba_gp.ipynb` if you prefer the notebook workflow).
-
-### 4. Run the feature group ablation study
+#### A-1. Optional: regenerate EDA figures
 
 ```bash
-python scripts/03_feature_group_ablation.py
+python scripts/02_eda.py
 ```
 
-This script evaluates five feature group configurations × four models using cross-validation. Results are saved to `results/feature_group_ablation_results.csv`.
+Reads processed datasets from `data/processed_data/` and saves figures to `figures/`. Independent of all other scripts.
 
-### 5. Run hyperparameter tuning
+#### A-2. Random Forest hyperparameter tuning
 
 ```bash
-python scripts/04_rf_tuning.py     # Random Forest tuning
-python scripts/06_xgb_tuning.py    # XGBoost tuning
+python scripts/04_rf_tuning.py
 ```
 
-These scripts run `RandomizedSearchCV` and save the best parameters and tuning summaries to `results/`.
+Runs `RandomizedSearchCV` (20 iterations, 5-fold × 5 repeats). Saves best parameters to `results/best_rf_params.json` and full tuning results to `results/rf_tuning_results.csv`.
 
-### 6. Evaluate tuned models
+#### A-3. Evaluate tuned Random Forest
 
 ```bash
 python scripts/05_evaluate_tuned_rf.py
+```
+
+**Requires:** `results/best_rf_params.json` (produced by A-2).  
+Evaluates the tuned Random Forest with 5-fold × 10 repeats cross-validation. Results saved to `results/tuned_rf_evaluation.csv`.
+
+#### A-4. XGBoost hyperparameter tuning
+
+```bash
+python scripts/06_xgb_tuning.py
+```
+
+Runs `RandomizedSearchCV` (30 iterations, 5-fold × 5 repeats). Saves best parameters to `results/best_xgb_params.json` and full tuning results to `results/xgb_tuning_results.csv`. Independent of A-2/A-3 and can be run in parallel.
+
+#### A-5. Evaluate tuned XGBoost
+
+```bash
 python scripts/07_evaluate_tuned_xgb.py
 ```
 
-These scripts load the best parameters from `results/best_rf_params.json` and `results/best_xgb_params.json` and evaluate the tuned models with repeated cross-validation.
+**Requires:** `results/best_xgb_params.json` (produced by A-4).  
+Evaluates the tuned XGBoost with 5-fold × 10 repeats cross-validation. Results saved to `results/tuned_xgb_evaluation.csv`.
 
-### 7. Run final model interpretation
+#### A-6. Final model interpretation
 
 ```bash
 python scripts/08_final_model_interpretation.py
 ```
 
-This script fits the tuned Random Forest on an 80/20 train-test split, computes permutation importance, and generates partial dependence plots for `log_T_Cd`, `Fe`, `SOM`, and `pH`. Outputs are saved to `results/` and `figures/`.
+**Requires:** `results/best_rf_params.json` (produced by A-2).  
+Fits the tuned Random Forest on an 80/20 train-test split, computes permutation importance (30 repeats), and generates partial dependence plots for `log_T_Cd`, `Fe`, `SOM`, and `pH`. Outputs saved to `results/final_tuned_rf_permutation_importance.csv` and `figures/`.
 
-### 8. Run the modeling notebook
+**Dependency summary for Path A:**
 
-Open and run:
+```text
+scripts/02_eda.py                              # independent
+scripts/04_rf_tuning.py                        # independent
+  └─ scripts/05_evaluate_tuned_rf.py           # requires best_rf_params.json
+  └─ scripts/08_final_model_interpretation.py  # requires best_rf_params.json
+scripts/06_xgb_tuning.py                       # independent of RF branch
+  └─ scripts/07_evaluate_tuned_xgb.py          # requires best_xgb_params.json
+```
+
+---
+
+### Path B: Standalone exploratory experiment (scripts/03)
+
+```bash
+python scripts/03_feature_group_ablation.py
+```
+
+Runs a feature group ablation study across five configurations (Total-Cd-only → Soil-properties-only → Cd + Soil → Cd + Soil + Method → Full-feature) and four models. Reads only `data/processed_data/processed_bioaccessibility.csv` and `config.yaml`. Its output (`results/feature_group_ablation_results.csv`) is not consumed by any other script. Can be run independently at any time after processed data is available, with no dependency on Path A or Path C.
+
+---
+
+### Path C: Notebook path (independent of scripts/03–08)
+
+Both notebooks read processed data directly from `data/processed_data/` and do not depend on any output produced by the script pipeline.
+
+#### C-1. Run the modeling notebook
 
 ```text
 notebooks/09_model_ba_gp.ipynb
@@ -282,66 +316,39 @@ notebooks/09_model_ba_gp.ipynb
 This notebook performs:
 
 - total-Cd-only baseline modeling;
-- full-feature model comparison;
+- full-feature model comparison (Ridge Regression, Random Forest, Gradient Boosting, XGBoost);
 - 5-fold cross-validation;
-- Ridge Regression, Random Forest, Gradient Boosting, and XGBoost modeling;
 - baseline vs full-feature comparison;
 - Kruskal-Wallis tests for Method and Type effects;
 - permutation importance analysis;
 - partial dependence plot analysis.
 
-Main outputs are saved to:
+Main outputs are saved to `results/` and `figures/`.
 
-```text
-results/
-figures/
-```
-
-### 9. Run the risk-extension notebook
-
-After running the modeling notebook, open and run:
+#### C-2. Run the risk-extension notebook
 
 ```text
 notebooks/10_risk_extension.ipynb
 ```
 
-This notebook extends Cd bioaccessibility prediction toward risk interpretation by calculating:
+**Requires:** `notebooks/09_model_ba_gp.ipynb` to have been run first in the same notebook session (uses the fitted model object held in memory).  
+Calculates gastric-phase bioaccessible Cd as:
 
 ```text
 Bioaccessible Cd_GP = T_Cd × BA_GP / 100
 ```
 
-It then compares total Cd with bioaccessible Cd, constructs Low / Medium / High relative risk groups, and summarizes risk patterns by soil source type.
+Constructs Low / Medium / High relative risk groups and summarizes risk patterns by soil source type. Main outputs are saved to `results/bioaccessible_cd_risk_data.csv`, `results/bioaccessible_cd_risk_by_type.csv`, and `figures/`.
 
-Main outputs are saved to:
+---
 
-```text
-results/bioaccessible_cd_risk_data.csv
-results/bioaccessible_cd_risk_by_type.csv
-figures/
-```
-
-### 10. Optional: regenerate EDA figures
-
-If users want to regenerate the exploratory analysis figures, run:
-
-```bash
-python scripts/02_eda.py
-```
-
-This script reads the processed datasets from `data/processed_data/` and saves figures to:
-
-```text
-figures/
-```
-
-### 11. Output folders
+### Output folders
 
 - `data/processed_data/` stores processed datasets used for modeling and analysis.
 - `figures/` stores exploratory analysis, model performance, interpretation, and risk-extension figures.
 - `results/` stores model comparison tables, tuning results, feature importance, and risk-extension outputs.
 
-### 12. Notes
+### Notes
 
 - This demo is designed as a sample-level machine learning workflow, not a national-scale spatial prediction model.
 - The dataset does not include precise geographic coordinates.
