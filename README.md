@@ -13,8 +13,7 @@ This project explores whether machine learning models can improve Cd bioaccessib
 1. Can total Cd concentration alone predict gastric-phase Cd bioaccessibility?
 2. Do soil physicochemical properties, digestion methods, and soil source types improve prediction performance?
 3. Which variables are most important for predicting Cd bioaccessibility?
-4. Can hyperparameter-tuned Random Forest and XGBoost models outperform default-parameter models?
-5. Can predicted bioaccessibility be extended toward bioaccessibility-informed Cd risk interpretation?
+4. Can predicted bioaccessibility be extended toward bioaccessibility-informed Cd risk interpretation?
 
 ## Hypotheses
 
