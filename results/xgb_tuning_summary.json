@@ -1,0 +1,13 @@
+{
+    "best_score_neg_mae": -15.867908316203355,
+    "best_mae": 15.867908316203355,
+    "best_params": {
+        "model__subsample": 0.7,
+        "model__reg_lambda": 1,
+        "model__reg_alpha": 1,
+        "model__n_estimators": 100,
+        "model__max_depth": 3,
+        "model__learning_rate": 0.1,
+        "model__colsample_bytree": 1.0
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "best_score_neg_mae": -15.841873918257363,
+    "best_mae": 15.841873918257363,
+    "best_params": {
+        "model__n_estimators": 300,
+        "model__min_samples_leaf": 1,
+        "model__max_features": "sqrt",
+        "model__max_depth": 20
+    }
+}

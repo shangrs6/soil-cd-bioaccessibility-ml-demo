@@ -1,0 +1,65 @@
+data:
+  processed_file: "data/processed_data/processed_bioaccessibility.csv"
+
+target: "BA_GP"
+
+features:
+  numeric:
+    - log_T_Cd
+    - pH
+    - SOM
+    - Clay
+    - Silt
+    - Sand
+    - Fe
+
+  categorical:
+    - Method
+    - Type
+
+feature_groups:
+  Total-Cd-only:
+    - log_T_Cd
+
+  Soil-properties-only:
+    - pH
+    - SOM
+    - Clay
+    - Silt
+    - Sand
+    - Fe
+
+  Cd + Soil:
+    - log_T_Cd
+    - pH
+    - SOM
+    - Clay
+    - Silt
+    - Sand
+    - Fe
+
+  Cd + Soil + Method:
+    - log_T_Cd
+    - pH
+    - SOM
+    - Clay
+    - Silt
+    - Sand
+    - Fe
+    - Method
+
+  Full-feature:
+    - log_T_Cd
+    - pH
+    - SOM
+    - Clay
+    - Silt
+    - Sand
+    - Fe
+    - Method
+    - Type
+
+cv:
+  n_splits: 5
+  n_repeats: 10
+  random_state: 42

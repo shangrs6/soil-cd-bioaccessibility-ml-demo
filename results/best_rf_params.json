@@ -1,0 +1,6 @@
+{
+    "model__n_estimators": 300,
+    "model__min_samples_leaf": 1,
+    "model__max_features": "sqrt",
+    "model__max_depth": 20
+}
